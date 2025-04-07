@@ -72,11 +72,16 @@ public class UserService {
         }
         return users;
     }
-    
+
     public User updateUser(User updatedUser) {
-        User foundUser = userRepository.getReferenceById(updatedUser.getId());
-        foundUser.setName(updatedUser.getName());
-        foundUser.setSurname(updatedUser.getSurname());
+        User foundUser = null;
+        try {
+            foundUser = userRepository.getReferenceById(updatedUser.getId());
+            foundUser.setName(updatedUser.getName());
+            foundUser.setSurname(updatedUser.getSurname());
+        } catch (EntityNotFoundException e) {
+            throw new EntityNotFoundException("Could not find user with id " + updatedUser.getId());
+        }
         return userRepository.save(foundUser);
     }
 
