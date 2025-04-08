@@ -1,14 +1,11 @@
-package kerdaw.GenesisResources.Service;
+package kerdaw.GenesisResources.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import kerdaw.GenesisResources.dto.UserDTO;
 
-import kerdaw.GenesisResources.Model.User;
+import kerdaw.GenesisResources.model.User;
 import kerdaw.GenesisResources.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -90,7 +87,11 @@ public class UserService {
     }
 
     public boolean deleteUser(Integer id) {
-        userRepository.delete(userRepository.getReferenceById(id));
+        try {
+            userRepository.delete(userRepository.getReferenceById(id));
+        } catch (Exception e) {
+            throw new UserException("Unable to remove user from database");
+        }
         return !userRepository.existsById(id);
     }
 

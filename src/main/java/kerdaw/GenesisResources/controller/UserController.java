@@ -1,9 +1,9 @@
-package kerdaw.GenesisResources.Controller;
+package kerdaw.GenesisResources.controller;
 
-import kerdaw.GenesisResources.Model.User;
-import kerdaw.GenesisResources.Service.UserException;
+import kerdaw.GenesisResources.model.User;
+import kerdaw.GenesisResources.service.UserException;
 import kerdaw.GenesisResources.dto.UserDTO;
-import kerdaw.GenesisResources.Service.UserService;
+import kerdaw.GenesisResources.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,16 +50,24 @@ public class UserController {
 
     @PutMapping()
     public ResponseEntity<User> updateUser(@RequestBody User updatedUser){
-        User users = userService.updateUser(updatedUser);
+        User users;
+        try {
+            users = userService.updateUser(updatedUser);
+        } catch (Exception e) {
+            throw new UserException(e.getMessage());
+        }
         return ResponseEntity.ok(users);
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Boolean> deleteUser(@PathVariable Integer id){
-        boolean removed = userService.deleteUser(id);
-        if (!removed){
-            return ResponseEntity.internalServerError().body(removed);
+        boolean removed;
+        try {
+            removed = userService.deleteUser(id);
+        } catch (Exception e) {
+            throw new UserException(e.getMessage());
         }
+
         return ResponseEntity.ok(removed);
     }
 }

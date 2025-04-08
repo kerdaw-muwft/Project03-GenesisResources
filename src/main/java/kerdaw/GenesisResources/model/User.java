@@ -1,4 +1,4 @@
-package kerdaw.GenesisResources.Model;
+package kerdaw.GenesisResources.model;
 
 import jakarta.persistence.*;
 
