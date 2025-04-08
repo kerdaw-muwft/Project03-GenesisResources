@@ -1,14 +1,13 @@
 package kerdaw.GenesisResources.Controller;
 
 import kerdaw.GenesisResources.Model.User;
+import kerdaw.GenesisResources.Service.UserException;
 import kerdaw.GenesisResources.dto.UserDTO;
 import kerdaw.GenesisResources.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -20,21 +19,24 @@ public class UserController {
 
     @PostMapping()
     public ResponseEntity<User> addUser(@RequestBody UserDTO newUser){
-
-        User addedUser = userService.addUser(newUser);
-        if (addedUser == null){
-            return ResponseEntity.internalServerError().build();
+        User addedUser;
+        try {
+            addedUser = userService.addUser(newUser);
+        } catch (Exception e) {
+            throw new UserException(e.getMessage());
         }
         return ResponseEntity.ok(addedUser);
     }
 
     @GetMapping("{id}")
     public ResponseEntity<User> getUserById(@PathVariable Integer id, @RequestParam(required = false) boolean detail){
-        User addedUser = userService.getUserById(detail, id);
-        if (addedUser == null){
-            return ResponseEntity.internalServerError().build();
+        User foundUser;
+        try {
+            foundUser = userService.getUserById(detail, id);
+        } catch (Exception e) {
+            throw new UserException(e.getMessage());
         }
-        return ResponseEntity.ok(addedUser);
+        return ResponseEntity.ok(foundUser);
     }
 
     @GetMapping()
@@ -49,9 +51,6 @@ public class UserController {
     @PutMapping()
     public ResponseEntity<User> updateUser(@RequestBody User updatedUser){
         User users = userService.updateUser(updatedUser);
-        if (users == null){
-            return ResponseEntity.internalServerError().build();
-        }
         return ResponseEntity.ok(users);
     }
 

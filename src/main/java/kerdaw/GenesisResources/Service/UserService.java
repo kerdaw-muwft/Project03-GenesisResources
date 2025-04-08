@@ -6,25 +6,32 @@ import kerdaw.GenesisResources.dto.UserDTO;
 import kerdaw.GenesisResources.Model.User;
 import kerdaw.GenesisResources.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
 
 @Service
 public class UserService {
 
+    public static final String PERSON_ID_FILE_NAME = "src/main/resources/dataPersonID.txt";
+    public static final ArrayList<String> ALLOWED_PERSON_IDS = new ArrayList<>();
 
     @Autowired
     UserRepository userRepository;
 
-    public User addUser(UserDTO newUser){
-        if (!isPersonIdAvailable(newUser.getPersonID())){
-            return null;
+
+    public User addUser(UserDTO newUser) {
+        if (!isPersonIdAvailable(newUser.getPersonID())) {
+            throw new UserException("Person ID is already in use");
+        }
+        if (!isPersonIDCertified(newUser.getPersonID())){
+            throw new UserException("Person ID is not certified");
         }
 
         User user = new User();
@@ -38,25 +45,22 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    private boolean isPersonIdAvailable(String personID){
-        
-        User foundUser = userRepository.getUserByPersonID(personID);
-        System.out.println();
-        return foundUser == null;
-    }
-
-    public User getUserById(Boolean detail, Integer id) throws JpaObjectRetrievalFailureException{
-
-        // nevím proč, ale getReferenceById() sám nestačí a je třeba udělat kopii,
-        // jinak to vyhazuje výjimku
-        User foundUser = userRepository.getReferenceById(id).copy();
+    public User getUserById(Boolean detail, Integer id) {
+        User foundUser;
+        try {
+            // nevím proč, ale getReferenceById() sám nestačí a je třeba udělat kopii,
+            // jinak to vyhazuje výjimku
+            foundUser = userRepository.getReferenceById(id).copy();
+        } catch (EntityNotFoundException e) {
+            throw new UserException("Could not find user with id " + id);
+        }
 
         User userNoDetails = new User();
         userNoDetails.setId(foundUser.getId());
         userNoDetails.setName(foundUser.getName());
         userNoDetails.setSurname(foundUser.getSurname());
 
-        if(detail){
+        if (detail) {
             return foundUser;
         }
         return userNoDetails;
@@ -74,13 +78,13 @@ public class UserService {
     }
 
     public User updateUser(User updatedUser) {
-        User foundUser = null;
+        User foundUser;
         try {
             foundUser = userRepository.getReferenceById(updatedUser.getId());
             foundUser.setName(updatedUser.getName());
             foundUser.setSurname(updatedUser.getSurname());
         } catch (EntityNotFoundException e) {
-            throw new EntityNotFoundException("Could not find user with id " + updatedUser.getId());
+            throw new UserException("Could not find user with id " + updatedUser.getId());
         }
         return userRepository.save(foundUser);
     }
@@ -88,6 +92,26 @@ public class UserService {
     public boolean deleteUser(Integer id) {
         userRepository.delete(userRepository.getReferenceById(id));
         return !userRepository.existsById(id);
+    }
+
+    private boolean isPersonIdAvailable(String personID) {
+        User foundUser = userRepository.getUserByPersonID(personID);
+        return foundUser == null;
+    }
+
+    private boolean isPersonIDCertified(String personID){
+        return ALLOWED_PERSON_IDS.contains(personID);
+    }
+
+    @Autowired
+    private void readFile() throws Exception {
+        try (Scanner scanner = new Scanner(new BufferedReader(new FileReader(PERSON_ID_FILE_NAME)))) {
+            while (scanner.hasNext()){
+                ALLOWED_PERSON_IDS.add(scanner.nextLine());
+            }
+        } catch (FileNotFoundException e) {
+            throw new Exception("Could not find the file " + e.getMessage());
+        }
     }
 
 }
